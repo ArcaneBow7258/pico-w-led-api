@@ -1,14 +1,18 @@
+# Old
+# Please don't use
+# Following tutorial for barebones
+
 import network
 import machine
 from time import sleep, time
 
 import socket
 
-
 timeout = 100
 def connect():
     #Connect to WLAN
     wlan = network.WLAN(network.STA_IF)
+    wlan.config(hostname="picow")
     wlan.active(True)
     wlan.connect(ssid, password)
     start = time()
@@ -46,8 +50,9 @@ def serve(connection):
             print('test')
         elif request == '/off?':
             break
-        html = home()
-        client.send(html)
+        else:
+            html = home()
+            client.send(html)
         client.close()
 
 def home():
