@@ -3,3 +3,4 @@ settings.toml
 .ipynb_checkpoints
 config.py
 .vscode
+.micropico

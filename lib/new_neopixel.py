@@ -119,7 +119,6 @@ class Neopixel:
         if brightness > 255:
             brightness = 255
         self.brightnessvalue = brightness
-
     def set_pixel_line_gradient(self, pixel1, pixel2, left_rgb_w, right_rgb_w, how_bright=None):
         """
         Create a gradient with two RGB colors between "pixel1" and "pixel2" (inclusive)
