@@ -27,3 +27,6 @@ pin = #pin number on Pico W for WS2812B data: int
 - If you keep disconnecting to your Pico W with MicroPico, use command "MicrPico: Switch Pico" and should work
 - You might get an error running code consecutively saying port is already in use. Simply hit the reset button on bottom of VS Code after Stopping Web Server
     - I might fix this later    
+
+# Other Notes
+- `old_web_server.py` is tutorial code I had, basically if you did not use Microdot. More importantly taught me how to connect to internet :)
