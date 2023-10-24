@@ -14,20 +14,31 @@ from new_neopixel import Neopixel
 from time import sleep, time
 try:
     import uasyncio as asyncio
+    print('imported uasyncio')
 except ImportError:
     import asyncio
 # # # # #
-# For continguous states
+# For continguous 
+# # # # #
 class State():
     show = 0
     rainbow = 1
     chase = 2
 global_state = State.show
+event_state = asyncio.Event()
+control_lock = asyncio.Lock()
+def event_trigger(state = State.show):
+    global_state = state
+    event_state.set()
+    
+
 # # # # #
 # Tiny Helpers :)
 def parse_rgb(arguments):
     return (int(arguments['r']),int(arguments['g']),int(arguments['b']))
-
+def list_compare(input_list, control_List):
+    merged = list(set(input_list) & set(control_List))
+    return merged.sort() == control_List.sort():     
 # # # # #
 # 
 # Seconds to wait before timing out the connection to wifi
@@ -57,10 +68,11 @@ def connect():
 async def index(request):
     print('Home Connected')
     return 'Hello, world!'
-@app.route('/shutdown')
+@app.route('/shutdown', methods=['POST'])
 def shutdown(request):
-    request.app.shutdown()
-    return 'The server is shutting down...'
+    if request.method == 'POST':
+        request.app.shutdown()
+        return 'The server is shutting down...'
 @app.route('/test_pixel')
 def test_pixel(request):
     try:
@@ -87,7 +99,7 @@ def test_pixel(request):
 # # # # #
 # LED Control
 # # # # #
-args_gb = ['index', 'r','g','b']
+args_pixel = ['index', 'r','g','b']
 @app.route('/pixel', methods =['GET', 'POST'])
 async def pixel(request):
     try:
@@ -98,15 +110,15 @@ async def pixel(request):
             pixel = np.get_pixel(int(args['index']))
             return f"Pixel at {str(args['index'])} is {pixel}"
         elif request.method == 'POST':
-            args_keys = list(set(args_gb) & set(args.keys()))
+            args_keys = list(set(args_pixel) & set(args.keys()))
             print('Testing Args')
-            if args_keys.sort() == args_gb.sort():
+            if list_compare(args_keys, args_pixel):
                 print('Has args')
                 np.set_pixel(int(args['index']), 
                              parse_rgb(args), 
                               args['brightness'] if 'brightness' in args.keys() else None)
             else:
-                return f'Missing Arguments for Set_Pixel: {set(args_gb) - set(args.keys())}'
+                return f'Missing Arguments for Set_Pixel: {set(args_pixel) - set(args.keys())}'
             return 'POST Finished'
         else:
             return 'Invalid Request Method'
@@ -147,14 +159,27 @@ def show(request):
             return "Cleared"
         elif(bit == 0):
             np.show()
-            global_state=State.show
+            event_trigger()
         else:
             return 'Please send clear bit 0 or 1'
     else:
         np.show()
-        global_state=State.show
-        print(global_state)
+        event_trigger()
+        print('State:', global_state)
         return 'Shown'
+args_gb = ['r','g','b']
+@app.route('/fill', methods =['POST'])
+async def fill(request):
+    args = request.args
+    if request.method == 'POST':
+        if list_compare(args.keys(), args_gb):
+            np.fill(parse_rgb(args), args['brightness'] if 'brightness' in args.keys() else None)
+        else:
+            return 'Missing Args'
+    return 'Done'
+# # # # # 
+# Actual Code Running
+
 np = Neopixel(num_leds = num_pixels, state_machine = 1, pin = 1, mode = "RGB")
 try:
     connect()
@@ -166,10 +191,13 @@ except Exception as e:
 
 @app.route('/test_async', methods =['POST'])
 async def test_async(request):
-    global_state = 1
-    while global_state == 1:
+    global_state = State.chase
+    control_lock.acquire()
+    while not event_state.is_set():
         print(f'Waiting: {global_state}')
         await asyncio.sleep(2)
+    control_lock.release()
+    return "Killed!"
     
 # # # # #
 # Neopixel Init
