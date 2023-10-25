@@ -1,10 +1,8 @@
 #https://microdot.readthedocs.io/en/latest/intro.html
 # Flask-like micropython pacakge.
 from microdot_asyncio import Microdot
-#Need to connect to wifi
-import network
 # Set up a config.py with said variables
-from config import ssid, password, num_pixels, pin  
+from config import num_pixels, pin  
 # LED Controls
 # Base neopixel package does not have brightness controll, which I sort of want.
 # Please refer to lib to find source, origin github provided.
@@ -14,9 +12,11 @@ from new_neopixel import Neopixel
 from time import sleep, time
 try:
     import uasyncio as asyncio
-    print('imported uasyncio')
+    #print('imported uasyncio')
 except ImportError:
     import asyncio
+# Connection Stuff
+from connect import connect, ap
 # # # # #
 # For continguous 
 # # # # #
@@ -38,28 +38,12 @@ def parse_rgb(arguments):
     return (int(arguments['r']),int(arguments['g']),int(arguments['b']))
 def list_compare(input_list, control_List):
     merged = list(set(input_list) & set(control_List))
-    return merged.sort() == control_List.sort():     
+    return merged.sort() == control_List.sort()  
+
 # # # # #
-# 
-# Seconds to wait before timing out the connection to wifi
-timeout = 100
+# Create App
 app = Microdot()
-def connect():
-    global ssid, password
-    #Connect to WLAN
-    wlan = network.WLAN(network.STA_IF)
-    wlan.config(hostname="picow")
-    wlan.active(True)
-    wlan.connect(ssid, password)
-    start = time()
-    while wlan.isconnected() == False:
-        print('Waiting for connection...')
-        sleep(1)
-        if ((time() - start) > timeout):
-            raise TimeoutError()
-    ip = wlan.ifconfig()[0]
-    print(f'Connected on {ip}')
-    return ip
+
 
 # # # # #
 # General Use
@@ -183,8 +167,10 @@ async def fill(request):
 np = Neopixel(num_leds = num_pixels, state_machine = 1, pin = 1, mode = "RGB")
 try:
     connect()
+    # If you rerun code you have to hard reset to disable the AP and reset config.
+    ap()
 except Exception as e:
-    print("Error:", e)
+    print("Error connecting:", e)
     print("Could not connect, will run default LED items.")
     np.brightness(255.0/2)
     np.fill((255, 255, 255))
@@ -207,4 +193,4 @@ async def test_async(request):
 
 # # # # #
 # start app
-app.run(port=5001, debug=True)
+app.run(port=80, debug=True)
