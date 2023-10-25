@@ -53,11 +53,44 @@ async def index(request):
     print('Home Connected')
     return 'Hello, world!'
 @app.route('/shutdown', methods=['POST'])
-def shutdown(request):
+async def shutdown(request):
     if request.method == 'POST':
         request.app.shutdown()
         return 'The server is shutting down...'
 @app.route('/test_pixel')
+# Redirects
+# microsoft windows redirects
+@app.route("/ncsi.txt")
+async def ncsi(request):
+    print("AP ncsi.txt request received")
+    return index(request), 200
+
+@app.route("/connecttest.txt")
+async def connecttest(request):
+    print("AP connecttest.txt request received")
+    return index(request), 200
+
+@app.route("/redirect")
+async def redirect(request):
+    print("AP redirect request received")
+    return index(request), 302
+
+# android redirects
+@app.route("/generate_204")
+async def generate_204(request):
+    print("AP generate_204 request received")
+    return index(request), 302
+
+# apple redir
+@app.route("/hotspot-detect.html")
+async def hotspot(request):
+    print("AP hotspot-detect.html request received")
+    return "Apple"
+# Error handler
+@app.errorhandler(404)
+async def not_found(request):
+    return {'error': 'resource not found'}, 404
+
 def test_pixel(request):
     try:
         np.brightness(1)
@@ -161,6 +194,9 @@ async def fill(request):
         else:
             return 'Missing Args'
     return 'Done'
+
+
+
 # # # # # 
 # Actual Code Running
 
@@ -168,7 +204,7 @@ np = Neopixel(num_leds = num_pixels, state_machine = 1, pin = 1, mode = "RGB")
 try:
     connect()
     # If you rerun code you have to hard reset to disable the AP and reset config.
-    ap()
+    ap(catchall=True)
 except Exception as e:
     print("Error connecting:", e)
     print("Could not connect, will run default LED items.")

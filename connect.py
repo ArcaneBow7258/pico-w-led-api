@@ -39,13 +39,15 @@ def ap(network_name = "PicoW", network_pass = None, catchall = False):
         ap.config(security=0)
     if catchall:
         print("turning on captvie portal and dns server")
+        run_catchall(ap.ifconfig()[0])
     ap.active(True)
     print(f"Access point active at {network_name}.")
 
 
 
 # I think t his was ripped off phew
-# https://github.com/miguelgrinberg/microdot/discussions/141
+# https://github.com/miguelgrinberg/microdot/discussions/
+# https://ansonvandoren.com/posts/esp8266-captive-web-portal-part-2/
 async def _handler(socket, ip_address):
   while True:
     try:
